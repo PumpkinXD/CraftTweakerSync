@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <!-- Filter out Hypixel scoreboard and sound errors -->
+    <!--Prob useless becuz this mod since it cannot be used in a "vanilla" server-->
+    <RegexFilter regex="Error executing task.*|Unable to play unknown soundEvent.*" onMatch="DENY" onMismatch="NEUTRAL"/>
+</Configuration>

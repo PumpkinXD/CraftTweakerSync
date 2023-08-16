@@ -1,3 +1,4 @@
+//TODO:uses URI insteat of raw path Strings; change the way files are validated
 package com.porpit.crafttweakersync.common.scriptdata;
 
 import com.porpit.crafttweakersync.util.FileHelper;
