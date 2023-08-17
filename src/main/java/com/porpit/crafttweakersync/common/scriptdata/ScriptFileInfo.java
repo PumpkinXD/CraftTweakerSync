@@ -1,27 +1,33 @@
-//TODO:uses URI insteat of raw path Strings; change the way files are validated
 package com.porpit.crafttweakersync.common.scriptdata;
 
 import com.porpit.crafttweakersync.util.FileHelper;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Objects;
 
 public class ScriptFileInfo implements Serializable {
-    private String filePath;
-    private String fileMD5;
+    private String filePath;//should be *nix style path
+    private String fileMD5;//for plain text files, they should be converted to utf8 before generate this
 
 
     public ScriptFileInfo(){}
     public ScriptFileInfo(String filePath, String fileMD5) {
         this.filePath = filePath;
+        if(SystemUtils.IS_OS_WINDOWS){
+            this.filePath.replace('\\','/');
+        }
         this.fileMD5 = fileMD5;
     }
     public ScriptFileInfo(File file) throws Exception {
 
         this.filePath = file.getPath();
+        if(SystemUtils.IS_OS_WINDOWS){
+            this.filePath.replace('\\','/');
+        }
         this.fileMD5 = FileHelper.getMd5ByFile(file);
         //客户端只需存入路径信息
         //服务端需要文件数据以进行传输

@@ -2,38 +2,78 @@ package com.porpit.crafttweakersync.util;
 
 import com.porpit.crafttweakersync.CraftTweakerSync;
 import com.porpit.crafttweakersync.common.scriptdata.ScriptFileInfo;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.tika.Tika;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 public class FileHelper {
     public static String getMd5ByFile(File file) throws FileNotFoundException {
         String value = null;
         FileInputStream in = new FileInputStream(file);
+        Tika tika = new Tika();
+        String fileType="";
         try {
-            MappedByteBuffer byteBuffer = in.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(byteBuffer);
-            BigInteger bi = new BigInteger(1, md5.digest());
-            value = bi.toString(16);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (null != in) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            fileType = tika.detect(in).toLowerCase();
+        } catch (Throwable e){;}
+        if (!fileType.matches("text/(.*)") || Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
+        {
+            try {
+                MappedByteBuffer byteBuffer = in.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+                MessageDigest md5 = MessageDigest.getInstance("MD5");
+                md5.update(byteBuffer);
+                BigInteger bi = new BigInteger(1, md5.digest());
+                value = bi.toString(16);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (null != in) {
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+        }else {
+
+            try{
+                //BufferedReader reader=new BufferedReader(new InputStreamReader(in,Charset.defaultCharset()))
+
+                MappedByteBuffer byteBuffer = in.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+                ByteBuffer byteBufferUTF8 = ByteBuffer.wrap(byteBuffer.toString().getBytes(StandardCharsets.UTF_8));
+                MessageDigest md5 = MessageDigest.getInstance("MD5");
+                md5.update(byteBufferUTF8);
+                BigInteger bi = new BigInteger(1, md5.digest());
+                value = bi.toString(16);
+
+            } catch (Throwable e2){
+                e2.printStackTrace();
+            }
+            finally {
+                if (null != in) {
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
         }
+
         return value;
     }
 
@@ -65,7 +105,7 @@ public class FileHelper {
                         ScriptFileInfo scriptFileInfo = new ScriptFileInfo(file);
                         listData.add(scriptFileInfo);
                     } catch (Exception e) {
-                        CraftTweakerSync.logger.warn("文件:" + file.getPath() + "读取失败!");
+                        CraftTweakerSync.logger.warn("Failed to read" + file.getPath() + "!");
                     }
                 }
             }
@@ -73,18 +113,22 @@ public class FileHelper {
         return listData;
     }
 
-    public static byte[] getFileBytes(File file) throws Exception {
+    public static byte[] getFileBytes(File file) throws Exception {//TODO:convet text files to utf8 from local encoding(gbk or smh)
         byte[] buffer = null;
-        FileInputStream fis = new FileInputStream(file);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
-        byte[] b = new byte[1000];
-        int n;
-        while ((n = fis.read(b)) != -1) {
-            bos.write(b, 0, n);
+        if (Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
+        {
+            FileInputStream fis = new FileInputStream(file);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
+            byte[] b = new byte[1000];
+            int n;
+            while ((n = fis.read(b)) != -1) {
+                bos.write(b, 0, n);
+            }
+            fis.close();
+            bos.close();
+            buffer = bos.toByteArray();
         }
-        fis.close();
-        bos.close();
-        buffer = bos.toByteArray();
+
         return buffer;
     }
     public static void getFileByBytes(byte[] bfile, String filePath,String fileName) throws Exception{
@@ -166,7 +210,7 @@ public class FileHelper {
             }
         }
     }
-    public static void writeBytesToFile(File file, byte[] data) throws IOException{
+    public static void writeBytesToFile(File file, byte[] data) throws IOException{//TODO:convert text files to local encoding(gbk or smh)
         OutputStream out = new FileOutputStream(file);
         InputStream is = new ByteArrayInputStream(data);
         byte[] buff = new byte[1024];
