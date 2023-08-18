@@ -8,9 +8,12 @@ import org.apache.tika.Tika;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -20,7 +23,7 @@ import java.util.Locale;
 import java.util.logging.Logger;
 
 public class FileHelper {
-    public static String getMd5ByFile(File file) throws FileNotFoundException {
+    public static String getMd5ByFile(File file) throws FileNotFoundException {//TODO:use CharsetDecoder/CharsetEncoder to replace String
         String value = null;
         FileInputStream in = new FileInputStream(file);
         Tika tika = new Tika();
@@ -113,7 +116,7 @@ public class FileHelper {
         return listData;
     }
 
-    public static byte[] getFileBytes(File file) throws Exception {//TODO:convet text files to utf8 from local encoding(gbk or smh) (remove this comment later)
+    public static byte[] getFileBytes(File file) throws Exception {//TODO:use CharsetDecoder/CharsetEncoder to replace String
         byte[] buffer = null;
         if (Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
         {
@@ -248,7 +251,35 @@ public class FileHelper {
             is.close();
             out.close();
         }else {
-            //TODO:convert text files to local encoding(gbk or smh) (prob next commit)
+            Tika tika=new Tika();
+            String datatype=tika.detect(data).toLowerCase();
+            if (datatype.matches("text/(.*)")){
+                CharsetDecoder decoder=StandardCharsets.UTF_8.newDecoder();
+                CharsetEncoder encoder=Charset.defaultCharset().newEncoder();
+                CharBuffer cb=decoder.decode(ByteBuffer.wrap(data));
+                ByteBuffer Locdata=encoder.encode(cb);
+                OutputStream out = new FileOutputStream(file);
+                InputStream is = new ByteArrayInputStream(Locdata.array());
+                byte[] buff = new byte[1024];
+                int len = 0;
+                while((len=is.read(buff))!=-1){
+                    out.write(buff, 0, len);
+                }
+                is.close();
+                out.close();
+            }
+            else {
+                OutputStream out = new FileOutputStream(file);
+                InputStream is = new ByteArrayInputStream(data);
+                byte[] buff = new byte[1024];
+                int len = 0;
+                while((len=is.read(buff))!=-1){
+                    out.write(buff, 0, len);
+                }
+                is.close();
+                out.close();
+            }
+
         }
 
     }
