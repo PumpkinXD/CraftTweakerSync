@@ -113,7 +113,7 @@ public class FileHelper {
         return listData;
     }
 
-    public static byte[] getFileBytes(File file) throws Exception {//TODO:convet text files to utf8 from local encoding(gbk or smh)
+    public static byte[] getFileBytes(File file) throws Exception {//TODO:convet text files to utf8 from local encoding(gbk or smh) (remove this comment later)
         byte[] buffer = null;
         if (Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
         {
@@ -127,6 +127,31 @@ public class FileHelper {
             fis.close();
             bos.close();
             buffer = bos.toByteArray();
+        }
+        else{
+            Tika tika=new Tika();
+            String fileType="";
+            FileInputStream fis = new FileInputStream(file);
+
+            try {
+                fileType = tika.detect(fis).toLowerCase();
+            } catch (Throwable e){;}
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
+            byte[] b = new byte[1000];
+            int n;
+            while ((n = fis.read(b)) != -1) {
+                bos.write(b, 0, n);
+            }
+            fis.close();
+            bos.close();
+            buffer = bos.toByteArray();
+            if (fileType.matches("text/(.*)"))
+            {
+                buffer=(new String(buffer)).getBytes(StandardCharsets.UTF_8);
+            }else {
+                ;
+            }
         }
 
         return buffer;
@@ -210,16 +235,22 @@ public class FileHelper {
             }
         }
     }
-    public static void writeBytesToFile(File file, byte[] data) throws IOException{//TODO:convert text files to local encoding(gbk or smh)
-        OutputStream out = new FileOutputStream(file);
-        InputStream is = new ByteArrayInputStream(data);
-        byte[] buff = new byte[1024];
-        int len = 0;
-        while((len=is.read(buff))!=-1){
-            out.write(buff, 0, len);
+    public static void writeBytesToFile(File file, byte[] data) throws IOException{
+
+        if (Charset.defaultCharset().toString().toLowerCase().matches("utf-8")){//if Charset.defaultCharset() is utf8
+            OutputStream out = new FileOutputStream(file);
+            InputStream is = new ByteArrayInputStream(data);
+            byte[] buff = new byte[1024];
+            int len = 0;
+            while((len=is.read(buff))!=-1){
+                out.write(buff, 0, len);
+            }
+            is.close();
+            out.close();
+        }else {
+            //TODO:convert text files to local encoding(gbk or smh) (prob next commit)
         }
-        is.close();
-        out.close();
+
     }
 
 }

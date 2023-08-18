@@ -18,7 +18,7 @@ public class ScriptFileInfo implements Serializable {
     public ScriptFileInfo(String filePath, String fileMD5) {
         this.filePath = filePath;
         if(SystemUtils.IS_OS_WINDOWS){
-            this.filePath.replace('\\','/');
+            this.filePath=this.filePath.replace('\\','/');
         }
         this.fileMD5 = fileMD5;
     }
@@ -26,7 +26,7 @@ public class ScriptFileInfo implements Serializable {
 
         this.filePath = file.getPath();
         if(SystemUtils.IS_OS_WINDOWS){
-            this.filePath.replace('\\','/');
+            this.filePath=this.filePath.replace('\\','/');
         }
         this.fileMD5 = FileHelper.getMd5ByFile(file);
         //客户端只需存入路径信息

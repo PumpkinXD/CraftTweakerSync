@@ -8,6 +8,8 @@ pluginManagement {
         maven("https://maven.minecraftforge.net/")
         maven("https://repo.spongepowered.org/maven/")
         maven("https://repo.sk1er.club/repository/maven-releases/")
+        maven("https://repo.essential.gg/repository/maven-public")
+        maven("https://maven.aliyun.com/repository/public")//for CN players(mirror of mavenCentral by aliyun)
     }
     resolutionStrategy {
         eachPlugin {
