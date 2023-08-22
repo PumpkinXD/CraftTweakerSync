@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
-@Mod(modid = CraftTweakerSync.MODID, name = CraftTweakerSync.NAME, version = CraftTweakerSync.VERSION, dependencies="after:crafttweaker;", acceptedMinecraftVersions = "1.12.2")
+@Mod(modid = CraftTweakerSync.MODID, name = CraftTweakerSync.NAME, version = CraftTweakerSync.VERSION, dependencies="after:crafttweaker;", acceptedMinecraftVersions = "1.12.2",useMetadata = true)
 public class CraftTweakerSync {
     public static final String MODID = "crafttweakersync";
     public static final String NAME = "CraftTweakerSync";
@@ -53,5 +53,6 @@ public class CraftTweakerSync {
     public void serverStarted(FMLServerStartedEvent event) {
         logger.info("CraftTweakerSync (CraftTweaker 脚本自动同步MOD) 成功加载! 作者:PorPit(泼皮)");
         logger.info("如有问题反馈泼皮QQ:692066768");
+        //FileHelper.getScriptDirectory();
     }
 }

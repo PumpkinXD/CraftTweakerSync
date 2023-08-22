@@ -2,8 +2,10 @@ package com.porpit.crafttweakersync.util;
 
 import com.porpit.crafttweakersync.CraftTweakerSync;
 import com.porpit.crafttweakersync.common.scriptdata.ScriptFileInfo;
+import net.sf.jmimemagic.*;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.tika.Tika;
+import org.apache.logging.log4j.Logger;
+//import org.apache.tika.Tika;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -20,24 +22,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Logger;
 
 public class FileHelper {
-    public static String getMd5ByFile(File file) throws FileNotFoundException {//TODO:use CharsetDecoder/CharsetEncoder to replace String
+    public static String getMd5ByFile(File file) throws FileNotFoundException {
         String value = null;
         FileInputStream in = new FileInputStream(file);
-        Tika tika = new Tika();
-        String fileType="";
-        try {
-            fileType = tika.detect(in).toLowerCase();
-        } catch (Throwable e){;}
-        if (!fileType.matches("text/(.*)") || Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
+
+
+        if (Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
         {
+            //CraftTweakerSync.logger.info("utf8");
             try {
                 MappedByteBuffer byteBuffer = in.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 md5.update(byteBuffer);
                 BigInteger bi = new BigInteger(1, md5.digest());
+
+
+                //CraftTweakerSync.logger.info(byteBuffer);
+                //CraftTweakerSync.logger.info(byteBuffer.limit());
+                //CraftTweakerSync.logger.info(byteBuffer.toString());
+
                 value = bi.toString(16);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -51,19 +56,34 @@ public class FileHelper {
                 }
             }
         }else {
-
+            //CraftTweakerSync.logger.info("not utf8");
             try{
-                CharsetDecoder decoder=Charset.defaultCharset().newDecoder();
-                CharsetEncoder encoder=StandardCharsets.UTF_8.newEncoder();
                 MappedByteBuffer byteBuffer = in.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-                //ByteBuffer byteBufferUTF8 = ByteBuffer.wrap(byteBuffer.toString().getBytes(StandardCharsets.UTF_8));
-                ByteBuffer byteBufferUTF8=encoder.encode(decoder.decode(byteBuffer));
+                String fileType="";
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
-                md5.update(byteBufferUTF8);
+                int length = byteBuffer.limit();
+                byte[] arr=new byte[length];
+                byteBuffer.get(arr);
+                MagicMatch match=Magic.getMagicMatch(arr);
+                fileType=match.getMimeType().toLowerCase();
+                if(fileType.matches("text/(.*)")){
+                    //CraftTweakerSync.logger.info("text");
+                    //CharsetDecoder decoder=Charset.defaultCharset().newDecoder();
+                    //CharsetEncoder encoder=StandardCharsets.UTF_8.newEncoder();
+                    String text=new String(arr);
+                    ByteBuffer byteBufferUTF8=ByteBuffer.wrap(text.getBytes(StandardCharsets.UTF_8));//encoder.encode(decoder.decode(byteBuffer));
+                    //CraftTweakerSync.logger.info(byteBufferUTF8);
+                    //CraftTweakerSync.logger.info(byteBufferUTF8.limit());
+                    //CraftTweakerSync.logger.info(byteBufferUTF8.toString());
+                    md5.update(byteBufferUTF8);
+                }else {
+                    md5.update(byteBuffer);
+                }
                 BigInteger bi = new BigInteger(1, md5.digest());
                 value = bi.toString(16);
 
             } catch (Throwable e2){
+                CraftTweakerSync.logger.warn(e2);
                 e2.printStackTrace();
             }
             finally {
@@ -77,7 +97,7 @@ public class FileHelper {
             }
 
         }
-
+        CraftTweakerSync.logger.info(value);
         return value;
     }
 
@@ -117,10 +137,11 @@ public class FileHelper {
         return listData;
     }
 
-    public static byte[] getFileBytes(File file) throws Exception {//TODO:use CharsetDecoder/CharsetEncoder to replace String
+    public static byte[] getFileBytes(File file) throws Exception {
         byte[] buffer = null;
         if (Charset.defaultCharset().toString().toLowerCase().matches("utf-8"))
         {
+            CraftTweakerSync.logger.info("utf8");
             FileInputStream fis = new FileInputStream(file);
             ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
             byte[] b = new byte[1000];
@@ -133,13 +154,9 @@ public class FileHelper {
             buffer = bos.toByteArray();
         }
         else{
-            Tika tika=new Tika();
+
             String fileType="";
             FileInputStream fis = new FileInputStream(file);
-
-            try {
-                fileType = tika.detect(fis).toLowerCase();
-            } catch (Throwable e){;}
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
             byte[] b = new byte[1000];
@@ -150,12 +167,14 @@ public class FileHelper {
             fis.close();
             bos.close();
             buffer = bos.toByteArray();
+            MagicMatch match = Magic.getMagicMatch(buffer);
+            fileType=match.getMimeType().toLowerCase();
             if (fileType.matches("text/(.*)"))
             {
-                CharsetDecoder decoder=Charset.defaultCharset().newDecoder();
-                CharsetEncoder encoder=StandardCharsets.UTF_8.newEncoder();
-                //buffer=(new String(buffer)).getBytes(StandardCharsets.UTF_8);
-                buffer=encoder.encode(decoder.decode(ByteBuffer.wrap(buffer))).array();
+                //CharsetDecoder decoder=Charset.defaultCharset().newDecoder();
+                //CharsetEncoder encoder=StandardCharsets.UTF_8.newEncoder();
+                buffer=(new String(buffer)).getBytes(StandardCharsets.UTF_8);
+                //buffer=encoder.encode(decoder.decode(ByteBuffer.wrap(buffer))).array();
             }else {
                 ;
             }
@@ -255,13 +274,25 @@ public class FileHelper {
             is.close();
             out.close();
         }else {
-            Tika tika=new Tika();
-            String datatype=tika.detect(data).toLowerCase();
+            //Magic parser =new Magic();
+            MagicMatch match=null;
+            try {
+                match=Magic.getMagicMatch(data);
+            } catch (MagicParseException e) {
+                e.printStackTrace();
+            } catch (MagicMatchNotFoundException e) {
+                e.printStackTrace();
+            } catch (MagicException e) {
+                e.printStackTrace();
+            }
+            String datatype = match.getMimeType().toLowerCase();
             if (datatype.matches("text/(.*)")){
-                CharsetDecoder decoder=StandardCharsets.UTF_8.newDecoder();
-                CharsetEncoder encoder=Charset.defaultCharset().newEncoder();
-                CharBuffer cb=decoder.decode(ByteBuffer.wrap(data));
-                ByteBuffer Locdata=encoder.encode(cb);
+                //CharsetDecoder decoder=StandardCharsets.UTF_8.newDecoder();
+                //CharsetEncoder encoder=Charset.defaultCharset().newEncoder();
+                //CharBuffer cb=decoder.decode(ByteBuffer.wrap(data));
+                //ByteBuffer Locdata=encoder.encode(cb);
+                String text=new String(data,StandardCharsets.UTF_8);
+                ByteBuffer Locdata=ByteBuffer.wrap(text.getBytes(Charset.defaultCharset()));
                 OutputStream out = new FileOutputStream(file);
                 InputStream is = new ByteArrayInputStream(Locdata.array());
                 byte[] buff = new byte[1024];

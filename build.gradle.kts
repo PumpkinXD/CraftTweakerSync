@@ -73,7 +73,9 @@ dependencies {
     // If you don't want to log in with your real minecraft account, remove this line
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.1.2")
 
-    implementation("org.apache.tika:tika-core:2.8.0")
+    //shadowImpl("org.apache.tika:tika-core:2.8.0")
+    //implementation("net.sf.jmimemagic:jmimemagic:0.1.5")
+    shadowImpl("net.sf.jmimemagic:jmimemagic:0.1.5")
 
 }
 
