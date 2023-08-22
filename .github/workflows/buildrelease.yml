@@ -1,5 +1,8 @@
 name: Run Gradle Build && Release to Github
-on: workflow_dispatch
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
 jobs:
   gradle:
     runs-on: ubuntu-latest

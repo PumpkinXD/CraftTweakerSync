@@ -53,10 +53,11 @@ public class FileHelper {
         }else {
 
             try{
-                //BufferedReader reader=new BufferedReader(new InputStreamReader(in,Charset.defaultCharset()))
-
+                CharsetDecoder decoder=Charset.defaultCharset().newDecoder();
+                CharsetEncoder encoder=StandardCharsets.UTF_8.newEncoder();
                 MappedByteBuffer byteBuffer = in.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-                ByteBuffer byteBufferUTF8 = ByteBuffer.wrap(byteBuffer.toString().getBytes(StandardCharsets.UTF_8));
+                //ByteBuffer byteBufferUTF8 = ByteBuffer.wrap(byteBuffer.toString().getBytes(StandardCharsets.UTF_8));
+                ByteBuffer byteBufferUTF8=encoder.encode(decoder.decode(byteBuffer));
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 md5.update(byteBufferUTF8);
                 BigInteger bi = new BigInteger(1, md5.digest());
@@ -151,7 +152,10 @@ public class FileHelper {
             buffer = bos.toByteArray();
             if (fileType.matches("text/(.*)"))
             {
-                buffer=(new String(buffer)).getBytes(StandardCharsets.UTF_8);
+                CharsetDecoder decoder=Charset.defaultCharset().newDecoder();
+                CharsetEncoder encoder=StandardCharsets.UTF_8.newEncoder();
+                //buffer=(new String(buffer)).getBytes(StandardCharsets.UTF_8);
+                buffer=encoder.encode(decoder.decode(ByteBuffer.wrap(buffer))).array();
             }else {
                 ;
             }
